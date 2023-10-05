@@ -5,10 +5,12 @@ import loquinRequired from '../middlewares/loquinRequired';
 
 const route = new Router();
 
-route.post('/users/store', UserController.store);
-route.get('/users/', loquinRequired, UserController.index);
-route.get('/users/:id/show', UserController.show);
-route.put('/users/:id/update', UserController.update);
-route.delete('/users/:id/delete', UserController.delete);
+// Não precisa existir num sistema real (index | show)
+route.get('/users/', loquinRequired, UserController.index); // list users
+route.get('/users/:id/show', UserController.show); // list user
+
+route.post('/users/store', UserController.store); // create new user
+route.put('/users/update', loquinRequired, UserController.update); // update user
+route.delete('/users/delete', loquinRequired, UserController.delete); // delete user
 
 export default route;

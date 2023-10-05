@@ -4,7 +4,7 @@ class HomeController {
   // index
   async index(req, res) {
     try {
-      const users = await User.findAll();
+      const users = await User.findAll({ attributes: ['id', 'username', 'email'] });
 
       return res.status(200).json(users);
     } catch (err) {
@@ -18,8 +18,12 @@ class HomeController {
   async store(req, res) {
     try {
       const user = await User.create(req.body);
-
-      return res.status(200).json(user);
+      const {
+        id, username, email, password, password_hash,
+      } = user;
+      return res.status(200).json({
+        id, username, email, password, password_hash,
+      });
     } catch (err) {
       console.log(err);
       return res.status(400).json({
@@ -31,9 +35,24 @@ class HomeController {
   // show
   async show(req, res) {
     try {
+      if (!req.params.id) {
+        return res.status(401).json({
+          errors: ['user invalid'],
+        });
+      }
+
       const user = await User.findByPk(req.params.id);
 
-      return res.status(200).json(user);
+      if (!user) {
+        return res.status(401).json({
+          errors: ['user not found'],
+        });
+      }
+
+      const { id, username, email } = user;
+      return res.status(200).json({
+        id, username, email,
+      });
     } catch (err) {
       console.log(err);
       return res.status(400).json({
@@ -45,12 +64,18 @@ class HomeController {
   // delete
   async delete(req, res) {
     try {
-      const { id } = req.params;
-      const user = await User.destroy({ where: { id } });
+      const user = await User.findByPk(req.userId);
+
+      if (!user) {
+        return res.status(401).json({
+          errors: ['user not found'],
+        });
+      }
+      const { id } = user;
+      await User.destroy({ where: { id } });
 
       return res.status(200).json({
-        user: 'deleted',
-        id: user.id,
+        state: 'user deleted',
       });
     } catch (err) {
       console.log(err);
@@ -63,14 +88,26 @@ class HomeController {
   // update
   async update(req, res) {
     try {
-      const { id } = req.params;
+      const user = await User.findByPk(req.userId);
 
-      const user = await User.update(req.body, { where: { id } });
+      if (!user) {
+        return res.status(401).json({
+          errors: ['user not found'],
+        });
+      }
 
-      return res.status(200).json(user);
+      const newData = await user.update(req.body);
+
+      const {
+        id, username, email, password,
+      } = newData;
+
+      return res.status(200).json({
+        id, username, email, password,
+      });
     } catch (err) {
       console.log(err);
-      return res.status(400).json({
+      return res.status(401).json({
         errors: err.errors.map((e) => e.message),
       });
     }
